@@ -4,6 +4,7 @@
 
 #include "GameFramework/Pawn.h"
 #include "Public/Book.h"
+
 #include "Bookworm.generated.h"
 
 UCLASS()
@@ -30,8 +31,9 @@ public:
 	// Book interface...
 	void NextPage();
 	void PrevPage();
+	void ToggleLayBookAside();
+	void LoadFile();
 	
-
 
 	///////////////////////////////////
 	// Params...
@@ -41,11 +43,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Book)
 	USkeletalMeshComponent* BookSKMComp;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Book)
-	USkeletalMesh* BookSMesh;
-	UAnimationAsset* AnimToPlay;
+	UAnimationAsset* ForwardAnim;
+	UAnimationAsset* BackwardAnim;
+
+	bool bBookLayedAside;
 
 
+	UPROPERTY(EditFixedSize, BlueprintReadOnly, Category = Book)
+	FString BookText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Book)
 	ABook* CurrentBook;

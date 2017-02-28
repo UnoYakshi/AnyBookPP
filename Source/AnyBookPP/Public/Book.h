@@ -30,6 +30,12 @@ struct FBookHeader
 	{}
 };
 
+USTRUCT()
+struct FTourNode
+{
+	GENERATED_USTRUCT_BODY()
+};
+
 UCLASS()
 class ANYBOOKPP_API ABook : public AActor
 {

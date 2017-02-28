@@ -3,3 +3,4 @@
 #include "AnyBookPP.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, AnyBookPP, "AnyBookPP" );
+//DEFINE_LOG_CATEGORY(LogTemp);

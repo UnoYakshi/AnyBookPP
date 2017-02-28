@@ -2,12 +2,15 @@
 
 #include "AnyBookPP.h"
 #include "Bookworm.h"
+#include "CoreMisc.h"
+#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 
 
 ABookworm::ABookworm()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
+	bBookLayedAside = false;
 
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
@@ -23,13 +26,18 @@ ABookworm::ABookworm()
 	SpringArm->bUsePawnControlRotation = true;
 
 	CurrentBook = CreateDefaultSubobject< ABook >(_T("Book"));
+	CurrentBook->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	
 	BookSKMComp = CreateDefaultSubobject< USkeletalMeshComponent >(_T("SKMComp"));
 	BookSKMComp->GlobalAnimRateScale = 1.5;
 	BookSKMComp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	BookSKMComp->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, 0.0f), FRotator(0.0f, 0.0f, 0.0f));
+	BookSKMComp->SetMobility(EComponentMobility::Movable);
 
-	//static ConstructorHelpers::FObjectFinder<UAnimSequence> anim(TEXT("AnimSequence'/Game/Mannequin/Animations/ThirdPersonJump_Start.ThirdPersonJump_Start'"));
-	//AnimToPlay = anim.Object;
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> anim(TEXT("AnimSequence'/Game/SKM/BookFroward_Anim.BookFroward_Anim'"));
+	ForwardAnim = anim.Object;
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> r_anim(TEXT("AnimSequence'/Game/SKM/BookBackward_Anim.BookBackward_Anim'"));
+	BackwardAnim = r_anim.Object;
 }
 void ABookworm::BeginPlay()
 {
@@ -39,9 +47,13 @@ void ABookworm::BeginPlay()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Bookworm's here!"));
 	}
-	if (BookSMesh)
+
+	FActorSpawnParameters spawnParams;
+	spawnParams.Owner = this;
+	CurrentBook = GetWorld()->SpawnActor< ABook >(CurrentBook->StaticClass(), spawnParams);
+	if (CurrentBook)
 	{
-		BookSKMComp->SetSkeletalMesh(BookSMesh);
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("SPAWNED"));
 	}
 }
 void ABookworm::Tick(float DeltaTime)
@@ -53,11 +65,11 @@ void ABookworm::Tick(float DeltaTime)
 	{
 		if (bZoomingIn)
 		{
-			ZoomFactor += DeltaTime / 0.5f;         //Zoom in over half a second
+			ZoomFactor += DeltaTime / 0.5f;		//Zoom in over half a second
 		}
 		else
 		{
-			ZoomFactor -= DeltaTime / 0.25f;        //Zoom out over a quarter of a second
+			ZoomFactor -= DeltaTime / 0.25f;		//Zoom out over a quarter of a second
 		}
 		ZoomFactor = FMath::Clamp<float>(ZoomFactor, 0.0f, 1.0f);
 		//Blend our camera's FOV and our SpringArm's length based on ZoomFactor
@@ -71,13 +83,16 @@ void ABookworm::Tick(float DeltaTime)
 void ABookworm::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
+
 	// Set up mouse input bindings...
 	InputComponent->BindAxis("LookUp", this, &ABookworm::PitchCamera);
 	InputComponent->BindAxis("TurnRight", this, &ABookworm::YawCamera);
-
+	
 	InputComponent->BindAction("NextPage", IE_Pressed, this, &ABookworm::NextPage);
 	InputComponent->BindAction("PrevPage", IE_Pressed, this, &ABookworm::PrevPage);
+	InputComponent->BindAction("ToggleLayBookAside", IE_Pressed, this, &ABookworm::ToggleLayBookAside);
+	InputComponent->BindAction("LoadFile", IE_Pressed, this, &ABookworm::LoadFile);
+
 }
 
 
@@ -87,7 +102,7 @@ void ABookworm::NextPage()
 	if (CurrentBook->NextPage())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Next :: true"));
-		//BookSKMComp->PlayAnimation(AnimToPlay, false);
+		BookSKMComp->PlayAnimation(ForwardAnim, false);
 	}
 	else
 	{
@@ -99,7 +114,9 @@ void ABookworm::PrevPage()
 	if (CurrentBook->PrevPage())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Prev :: True"));
-	
+		BookSKMComp->PlayAnimation(BackwardAnim, false);
+		
+
 	}
 	else
 	{
@@ -107,7 +124,47 @@ void ABookworm::PrevPage()
 
 	}
 }
+void ABookworm::ToggleLayBookAside()
+{
+	FRotator DeltaRot(0.f, 0.f, 40.f);
+	FVector DeltaLoc(-120.f, 0.f, -160.f);
+	
+	/// TODO :: Make it with MoveComponentTo()...
+	/*
+	FRotator NewRot = BookSKMComp->GetComponentRotation() + DeltaRot;
+	FVector NewLoc = BookSKMComp->GetComponentLocation() + DeltaLoc;
+	FLatentActionInfo LatentInfo;
+	LatentInfo.CallbackTarget = this;
+	//*/
+	/*
+	UKismetSystemLibrary::MoveComponentTo
+	(
+	BookSKMComp,
+	NewLoc,
+	NewRot,
+	false,
+	false,
+	1.f,
+	false,
+	EMoveComponentAction::Type::Move,
+	LatentInfo
+	);
+	//*/
 
+	DeltaRot = (bBookLayedAside) ? -1.f * DeltaRot : DeltaRot;
+	DeltaLoc = (bBookLayedAside) ? -1.f * DeltaLoc : DeltaLoc;
+
+	BookSKMComp->AddLocalRotation(DeltaRot);
+	BookSKMComp->AddRelativeLocation(DeltaLoc);
+
+	bBookLayedAside = !bBookLayedAside;
+}
+void ABookworm::LoadFile()
+{
+	FString filename = "C:\\Users\\WHS\\Documents\\Unreal Projects\\AnyBookPP\\AnyBookPP\\TestData\\Iron Feet";
+	FFileHelper::LoadFileToString(BookText, *filename);
+	UE_LOG(LogTemp, Log, TEXT("LangFile: \n %s"), *BookText);
+}
 
 //Input functions
 void ABookworm::PitchCamera(float AxisValue)
