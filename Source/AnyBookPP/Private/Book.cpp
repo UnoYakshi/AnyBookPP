@@ -48,6 +48,7 @@ bool ABook::PrevPage()
 	}
 	else
 	{
+
 		ShowText();
 		return true;
 	}
@@ -66,7 +67,13 @@ bool ABook::TurnToPage(int32 NewPage)
 	}
 }
 
+
+
 void ABook::ShowText()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Update Text"));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Update Text"));
+}
+void ABook::ToggelLamp()
+{
+
 }

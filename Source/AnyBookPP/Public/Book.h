@@ -67,4 +67,7 @@ public:
 	bool TurnToPage(int32 NewPage);
 	void ShowText();
 
+	/////////////////////////////////
+	// Diegetic Interfaces...
+	void ToggelLamp();
 };

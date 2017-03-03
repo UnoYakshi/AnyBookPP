@@ -29,32 +29,75 @@ public:
 	void ABookworm::ZoomOut();
 
 	// Book interface...
+	UFUNCTION(BlueprintCallable)
 	void NextPage();
+	UFUNCTION(BlueprintCallable)
 	void PrevPage();
 	void ToggleLayBookAside();
+	void ToggleChangeBook();
 	void LoadFile();
-	
+
+	UFUNCTION(BlueprintCallable)
+		virtual void OnReceiveUpdate0(class UCanvas* Canvas, int32 Width, int32 Height);
+	UFUNCTION(BlueprintCallable)
+		virtual void OnReceiveUpdate1(class UCanvas* Canvas, int32 Width, int32 Height);
+	UFUNCTION(BlueprintCallable)
+		virtual void OnReceiveUpdate2(class UCanvas* Canvas, int32 Width, int32 Height);
+	UFUNCTION(BlueprintCallable)
+		virtual void OnReceiveUpdate3(class UCanvas* Canvas, int32 Width, int32 Height);
 
 	///////////////////////////////////
 	// Params...
 	///////////////////////////////////
 	
+	bool bBookLayedAside;
+	bool bBookChange;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Book)
 	USkeletalMeshComponent* BookSKMComp;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Book)
+	USkeletalMeshComponent* Cover;
 
+	
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = Pages)
+	UTexture* PageTexture;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pages)
+	TArray< int32 > Pages;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pages)
+	TArray< class UCanvasRenderTarget2D* > Canvs;
+	
+	int32 CanvasWidth;
+	int32 CanvasHeight;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pages)
+	FName ParamName;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pages)
+	TArray< UMaterialInstanceDynamic* > DMIs;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Pages)
+	UMaterial* TextureMaterial;
+	
+	UTextureRenderTarget2D* TextureRT2D;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Pages)
+	UFont* CurrentFont;
+	
 	UAnimationAsset* ForwardAnim;
 	UAnimationAsset* BackwardAnim;
 
-	bool bBookLayedAside;
 
-
-	UPROPERTY(EditFixedSize, BlueprintReadOnly, Category = Book)
-	FString BookText;
+	bool bLastTurnNext;
+	bool bNewTurnNext;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Text)
+	TArray< FString > BookText;
+	TArray< FString > CurrentTexts;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Book)
 	ABook* CurrentBook;
-
 	UPROPERTY(EditAnywhere, Category = Book)
 	TArray< ABook* > AvailableBooks;
 
